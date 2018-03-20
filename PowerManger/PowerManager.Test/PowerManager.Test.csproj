@@ -48,16 +48,16 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="PowerManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PowerManger\PowerManger.csproj">
+    <ProjectReference Include="..\PowerManger\PowerManager.csproj">
       <Project>{b5863e48-f3a4-4ba7-84c6-53e44c951c7a}</Project>
-      <Name>PowerManger</Name>
+      <Name>PowerManager</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

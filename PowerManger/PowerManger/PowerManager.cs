@@ -1,153 +1,128 @@
-﻿
+﻿// <summary>
+//   Defines the PowerManager type.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
-namespace PowerManger
+namespace PowerManager
 {
-    using System.Runtime.InteropServices;
     using System;
+    using System.Runtime.InteropServices;
 
-    public struct SYSTEM_POWER_INFORMATION
+    [ComVisible(true)]
+    [Guid("4AC30934-C332-4AEB-8D1D-BBAE2503A9A8")]
+    [ClassInterface(ClassInterfaceType.None)]
+    public class PowerManager : IPowerManager
     {
-        public uint MaxIdlenessAllowed;
-        public uint Idleness;
-        public uint TimeRemaining;
-        public byte CoolingMode;
-    }
-    public struct SYSTEM_BATTERY_STATE
-    {
-        public bool AcOnLine;
-        public bool BatteryPresent;
-        public bool Charging;
-        public bool Discharging;
-        public uint Spare1;
-        public uint MaxCapacity;
-        public uint RemainingCapacity;
-        public uint Rate;
-        public uint EstimatedTime;
-        public uint DefaultAlert1;
-        public uint DefaultAlert2;
-    }
-    
-
-
-public class PowerManager
-    {
-        [DllImport("powrprof.dll")]
-        public static extern uint SetSuspendState(
-            bool Hibernate,
-            bool ForceCritical,
-            bool DisableWakeEvent
-        );
-
-        [DllImport("powrprof.dll")]
-        public static extern uint CallNtPowerInformation(
-            int InformationLevel,
-            IntPtr lpInputBuffer,
-            int nInputBufferSize,
-            out SYSTEM_POWER_INFORMATION spi,
-            int nOutputBufferSize
-        );
-
-        [DllImport("powrprof.dll")]
-        public static extern uint CallNtPowerInformation(
-            int InformationLevel,
-            IntPtr lpInputBuffer,
-            int nInputBufferSize,
-            out UInt64 outval,
-            int nOutputBufferSize
-        );
-
-        [DllImport("powrprof.dll")]
-        public static extern uint CallNtPowerInformation(
-            int InformationLevel,
-            IntPtr lpInputBuffer,
-            int nInputBufferSize,
-            out SYSTEM_BATTERY_STATE spi,
-            int nOutputBufferSize
-        );
-
-        public static ulong? GetLastSleepTime()
+        public ulong? GetLastSleepTime()
         {
             var t = Marshal.SizeOf(typeof(ulong));
-            uint STATUS_SUCCESS = 0;
-            ulong retvalue = 0;
-            uint callsuccess = CallNtPowerInformation(15, IntPtr.Zero, 0, out retvalue, t);
-            if (callsuccess == STATUS_SUCCESS)
+            uint statusSuccess = 0;
+            ulong retvalue;
+            uint callsuccess = CallPowerInformation.CallNtPowerInformation(
+                15, 
+                IntPtr.Zero, 
+                0, 
+                out retvalue, 
+                t);
+            if (callsuccess == statusSuccess)
+            {
                 return retvalue;
+            }
+
             return null;
         }
 
-        public static ulong? GetLastWakeTime()
+        public ulong? GetLastWakeTime()
         {
-            var t = Marshal.SizeOf(typeof(ulong));
-            uint STATUS_SUCCESS = 0;
-            ulong retvalue = 0;
-            uint callsuccess = CallNtPowerInformation(14, IntPtr.Zero, 0, out retvalue, t);
-            if (callsuccess == STATUS_SUCCESS)
+            uint statusSuccess = 0;
+            ulong retvalue;
+            uint callsuccess = CallPowerInformation.CallNtPowerInformation(
+                14, 
+                IntPtr.Zero, 
+                0, 
+                out retvalue, 
+                Marshal.SizeOf(typeof(ulong)));
+            if (callsuccess == statusSuccess)
+            {
                 return retvalue;
+            }
+
             return null;
         }
 
-        public static SYSTEM_BATTERY_STATE? GetBatteryState()
+        public SYSTEM_BATTERY_STATE? GetBatteryState()
         {
-            int SystemPowerInformation = 5;
-            uint STATUS_SUCCESS = 0;
-            SYSTEM_BATTERY_STATE spi;
+            uint statusSuccess = 0;
+            SYSTEM_BATTERY_STATE sbs;
 
-            uint retval = PowerManager.CallNtPowerInformation(
-                SystemPowerInformation,
+            uint retval = CallPowerInformation.CallNtPowerInformation(
+                5,
                 IntPtr.Zero,
                 0,
-                out spi,
-                Marshal.SizeOf(typeof(SYSTEM_BATTERY_STATE))
-            );
-            if (retval == STATUS_SUCCESS)
-                return spi;
+                out sbs,
+                Marshal.SizeOf(typeof(SYSTEM_BATTERY_STATE)));
+            if (retval == statusSuccess)
+            {
+                return sbs;
+            }
+
             return null;
         }
 
-        public static SYSTEM_POWER_INFORMATION? GetSystemPowerInformation()
+        public SYSTEM_POWER_INFORMATION? GetSystemPowerInformation()
         {
-            int SystemPowerInformation = 12;
-            uint STATUS_SUCCESS = 0;
+            uint statusSuccess = 0;
             SYSTEM_POWER_INFORMATION spi;
 
-            uint retval = PowerManager.CallNtPowerInformation(
-                SystemPowerInformation,
+            uint retval = CallPowerInformation.CallNtPowerInformation(
+                12,
                 IntPtr.Zero,
                 0,
                 out spi,
-                Marshal.SizeOf(typeof(SYSTEM_POWER_INFORMATION))
-            );
-            if (retval == STATUS_SUCCESS)
+                Marshal.SizeOf(typeof(SYSTEM_POWER_INFORMATION)));
+            if (retval == statusSuccess)
+            {
                 return spi;
+            }
+
             return null;
         }
 
-        public static void SetSleepState()
+        public void SetSleepState()
         {
-            uint STATUS_SUCCESS = 0;
-            uint retval = PowerManager.SetSuspendState(false, false, false);
+            CallPowerInformation.SetSuspendState(false, false, false);
         }
 
-        public static void ReserveHyberFile()
+        public uint ReserveHyberFile()
         {
-            int SystemPowerInformation = 10;
-            uint STATUS_SUCCESS = 0;
-            SYSTEM_POWER_INFORMATION spi;
-            
-            uint retval = PowerManager.CallNtPowerInformation(
-                SystemPowerInformation,
-                IntPtr.Zero,
+            int size = Marshal.SizeOf(typeof(byte));
+            var pBool = Marshal.AllocHGlobal(size);
+            Marshal.WriteByte(pBool, 0, 1);  // last parameter 0 (FALSE), 1 (TRUE)
+
+            uint retval = CallPowerInformation.CallNtPowerInformation(
+                10,
+                pBool,
                 0,
-                out spi,
-                Marshal.SizeOf(typeof(SYSTEM_POWER_INFORMATION))
-            );
-            if (retval == STATUS_SUCCESS)
-
+                out pBool,
+                    size);
+            Marshal.FreeHGlobal(pBool);
+            return retval;
         }
 
+        public uint FreeHybernatoinFile()
+        {
+            int size = Marshal.SizeOf(typeof(byte));
+            var pBool = Marshal.AllocHGlobal(size);
+            Marshal.WriteByte(pBool, 0, 0);  // last parameter 0 (FALSE), 1 (TRUE)
+
+            uint retval = CallPowerInformation.CallNtPowerInformation(
+                10,
+                pBool,
+                0,
+                out pBool,
+                size);
+            Marshal.FreeHGlobal(pBool);
+            return retval;
+        }
     }
-
-
-
 }
